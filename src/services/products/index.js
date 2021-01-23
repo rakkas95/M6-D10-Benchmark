@@ -9,16 +9,16 @@ const { validateProduct, validateReview } = require("../../utils/validator");
 const convertProductBody = (obj) => {
   const newProduct = { ...obj };
   newProduct.id = req.body._id;
-  newProduct.product_id = req.body.product._id;
-  newProduct.category_id = req.body.category._id;
+  newProduct.productId = req.body.product._id;
+  newProduct.categoryId = req.body.category._id;
   delete req.body._id, req.product, req.body.category;
   return newProduct;
 };
 
 const productQuery = `SELECT p.id AS _id, p.name AS "name", p.description AS "description", p.price AS "price", p.imageUrl AS image, p.created_at AS "createdAt", p.updated_at AS "updatedAt", c.name AS "categoryName", c.id AS "categoryId", b.name AS brand
 FROM products AS p
-JOIN categories AS c ON c.id = p.category_id
-JOIN brands AS b ON brands.id = p.brand_id
+JOIN categories AS c ON c.id = p.categoryId
+JOIN brands AS b ON brands.id = p.brandId
   `;
 
 const productsQuery = `SELECT
@@ -26,10 +26,10 @@ p.name AS "name", p.description AS "description", p.price AS "price", p.imageUrl
 CONCAT('{',json_object_agg('_id', brands.id),', ',json_object_agg('name', CONCAT(' ',brands.name))'}') AS brand,
 CONCAT('{',json_object_agg('_id', categories.id),', ',json_object_agg('name', categories.name)'}') AS category,
 json_agg(row_to_json((SELECT ColName FROM (SELECT r.id, r.comment, r.rate, r.created_at) AS ColName (_id, "comment", "rate", "createdAt")))) AS reviews
-FROM products AS a
-INNER JOIN categories ON p.category_id = categories.id
-INNER JOIN brands ON brands.id = p.brand_id
-INNER JOIN reviews AS r ON r.brand_id = p.id
+FROM products AS p
+INNER JOIN categories ON p.categoryId = categories.id
+INNER JOIN brands ON brands.id = p.brandId
+INNER JOIN reviews AS r ON r.brandId = p.id
 GROUP BY p.id`;
 
 router.get("/", async (req, res, next) => {
