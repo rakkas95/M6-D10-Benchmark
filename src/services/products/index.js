@@ -15,10 +15,11 @@ const convertProductBody = (obj) => {
   return newProduct;
 };
 
-const productQuery = `SELECT p.id AS _id, p.name AS "name", p.description AS "description", p.price AS "price", p.imageUrl AS image, p.created_at AS "createdAt", p.updated_at AS "updatedAt", c.name AS "categoryName", c.id AS "categoryId", b.name AS brand
-FROM products AS p
-JOIN categories AS c ON c.id = p.categoryId
-JOIN brands AS b ON brands.id = p.brandId
+const productQuery = `
+SELECT p.id AS "pdt_id", p.name as "pdt_name", p.description, p.price, p.imageUrl AS "pdt_img", p.created_at AS "createdAt", p.updated_at AS "updatedAt", c.id AS "cat_id", c.name AS cat_name, b.id AS bnd_id, b.name AS bnd_name
+FROM products AS p 
+INNER JOIN brands AS b ON p.brandId=b.id 
+INNER JOIN categories AS c ON p.categoryId=c.id
   `;
 
 const productsQuery = `SELECT
@@ -52,9 +53,9 @@ router.get("/:id", async (req, res, next) => {
       name: rows.categoryName,
     };
     const reviews = await db.query(`
-    SELECT brands.name AS name, comment FROM reviews
-    INNER JOIN products ON reviews.product_id = products.id
-    INNER JOIN brands ON reviews.brand_id = brands.id
+    SELECT brands.name AS name, comments, rate FROM reviews
+    INNER JOIN products ON reviews.productId = products.id
+    INNER JOIN brands ON reviews.brandId = brands.id
     WHERE products.id=${req.params.id}
     `);
     let response = {
@@ -126,7 +127,7 @@ router.put("/:id", validateProduct, async (req, res, next) => {
 router.put("/:articleId/reviews/:reviewId", async (req, res, next) => {
   try {
     const res = await Reviews.findByIdAndUpdate(req.params.reviewId, {
-      comment: req.body.comment,
+      comments: req.body.comment,
       brand_id: req.body.brandId,
       product_id: req.params.productId,
     });
