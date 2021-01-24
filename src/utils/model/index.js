@@ -22,7 +22,7 @@ class Model {
         return response;
     }
 
-    async findByIdandDelete(id) {
+    async findByIdAndDelete(id) {
         if (!id) {
             throw new Error("id is missing.");
         }

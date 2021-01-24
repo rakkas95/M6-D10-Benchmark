@@ -16,22 +16,20 @@ const convertProductBody = (obj) => {
 };
 
 const productQuery = `
-SELECT p.id AS "pdt_id", p.name as "pdt_name", p.description, p.price, p.imageUrl AS "pdt_img", p.created_at AS "createdAt", p.updated_at AS "updatedAt", c.id AS "cat_id", c.name AS cat_name, b.id AS bnd_id, b.name AS bnd_name
+SELECT p.id AS "pdt_id", p.name as "pdt_name", p.description, b.name AS bnd_name, p.imageUrl AS "pdt_img", p.price, c.name AS category, p.created_at AS "createdAt", p.updated_at AS "updatedAt" 
 FROM products AS p 
 INNER JOIN brands AS b ON p.brandId=b.id 
 INNER JOIN categories AS c ON p.categoryId=c.id
   `;
 
 const productsQuery = `SELECT
-p.name AS "name", p.description AS "description", p.price AS "price", p.imageUrl AS image, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
-CONCAT('{',json_object_agg('_id', brands.id),', ',json_object_agg('name', CONCAT(' ',brands.name))'}') AS brand,
-CONCAT('{',json_object_agg('_id', categories.id),', ',json_object_agg('name', categories.name)'}') AS category,
-json_agg(row_to_json((SELECT ColName FROM (SELECT r.id, r.comment, r.rate, r.created_at) AS ColName (_id, "comment", "rate", "createdAt")))) AS reviews
+p.id AS "pdt_id", p.name as "pdt_name", p.description, b.name AS bnd_name, p.imageUrl AS "pdt_img", p.price, c.name AS category, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
+r.id, r.comments, r.rate, p.id AS "productId", r.created_at AS "createdAt"
 FROM products AS p
-INNER JOIN categories ON p.categoryId = categories.id
-INNER JOIN brands ON brands.id = p.brandId
-INNER JOIN reviews AS r ON r.brandId = p.id
-GROUP BY p.id`;
+INNER JOIN brands AS b ON p.brandId=b.id 
+INNER JOIN categories AS c ON p.categoryId=c.id
+INNER JOIN reviews AS r ON r.brandId =r.id
+`;
 
 router.get("/", async (req, res, next) => {
   try {
@@ -72,7 +70,7 @@ router.get("/:id", async (req, res, next) => {
 router.get("/:productId/reviews", async (req, res, next) => {
   try {
     const { rows } = await Reviews.run(
-      `SELECT * FROM reviews WHERE product_id = '${req.params.productId}'`
+      `SELECT * FROM reviews WHERE productId = '${req.params.productId}'`
     );
     res.send(rows);
   } catch (error) {
@@ -124,12 +122,12 @@ router.put("/:id", validateProduct, async (req, res, next) => {
   }
 });
 
-router.put("/:articleId/reviews/:reviewId", async (req, res, next) => {
+router.put("/:productId/reviews/:reviewId", async (req, res, next) => {
   try {
     const res = await Reviews.findByIdAndUpdate(req.params.reviewId, {
-      comments: req.body.comment,
-      brand_id: req.body.brandId,
-      product_id: req.params.productId,
+      comments: req.body.comments,
+      brandId: req.body.brandId,
+      productId: req.params.productId,
     });
     res.send(res);
   } catch (error) {
